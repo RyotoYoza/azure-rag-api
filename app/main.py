@@ -1,16 +1,18 @@
 from fastapi import FastAPI
-from openai import AzureOpenAI
 from pydantic import BaseModel
 
 from app import config
+from app.rag import client, retrieve
 
 app = FastAPI(title="RAG API")
 
-client = AzureOpenAI(
-    azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
-    api_key=config.AZURE_OPENAI_API_KEY,
-    api_version=config.AZURE_OPENAI_API_VERSION,
-)
+SYSTEM_PROMPT = """You are an IT support assistant.
+Answer the question using ONLY the context below.
+If the context does not contain the answer, say that you don't know.
+Do not use outside knowledge.
+
+Context:
+{context}"""
 
 
 class AskRequest(BaseModel):
@@ -19,6 +21,7 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
+    sources: list[str]
 
 
 @app.get("/health")
@@ -28,12 +31,19 @@ def health():
 
 @app.post("/ask", response_model=AskResponse)
 def ask(request: AskRequest):
+    chunks = retrieve(request.question, k=3)
+    context = "\n\n---\n\n".join(f"[{source}]\n{content}" for source, content in chunks)
+
     completion = client.chat.completions.create(
         model=config.CHAT_DEPLOYMENT,
         messages=[
-            {"role": "system", "content": "You are an IT support assistant. Answer concisely."},
+            {"role": "system", "content": SYSTEM_PROMPT.format(context=context)},
             {"role": "user", "content": request.question},
         ],
         max_completion_tokens=800,
     )
-    return AskResponse(answer=completion.choices[0].message.content)
+
+    return AskResponse(
+        answer=completion.choices[0].message.content,
+        sources=sorted({source for source, _ in chunks}),
+    )
