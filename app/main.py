@@ -40,10 +40,17 @@ def ask(request: AskRequest):
             {"role": "system", "content": SYSTEM_PROMPT.format(context=context)},
             {"role": "user", "content": request.question},
         ],
-        max_completion_tokens=800,
+        max_completion_tokens=2000,
     )
 
+    choice = completion.choices[0]
+    print("finish_reason:", choice.finish_reason, "| usage:", completion.usage)
+
+    answer = choice.message.content or ""
+    if not answer:
+        answer = "The model did not return an answer (token budget exhausted). Try rephrasing."
+
     return AskResponse(
-        answer=completion.choices[0].message.content,
+        answer=answer,
         sources=sorted({source for source, _ in chunks}),
     )
