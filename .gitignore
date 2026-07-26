@@ -13,7 +13,6 @@ __pycache__/
 *.tfstate
 *.tfstate.backup
 *.tfvars.json
-.terraform.lock.hcl
 crash.log
 
 # OS / editor
