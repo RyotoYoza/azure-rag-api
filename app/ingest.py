@@ -1,13 +1,13 @@
-import glob
-import os
+from pathlib import Path
 
 from app.rag import embed, get_connection
 
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 150
 
+KB_DIR = Path(__file__).resolve().parent.parent / "docs" / "kb"
+
 SCHEMA = """
-CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS chunks (
     id BIGSERIAL PRIMARY KEY,
     source TEXT NOT NULL,
@@ -29,26 +29,31 @@ def chunk_text(text: str) -> list[str]:
 
 
 def main() -> None:
+    files = sorted(KB_DIR.glob("*.md"))
+    if not files:
+        raise SystemExit(f"No .md files found in {KB_DIR}")
+
     with get_connection() as conn:
         conn.execute(SCHEMA)
         conn.execute("TRUNCATE chunks")
 
-        for path in sorted(glob.glob("docs/kb/*.md")):
-            source = os.path.basename(path)
-            with open(path, encoding="utf-8") as f:
-                pieces = chunk_text(f.read())
-
+        total = 0
+        for path in files:
+            pieces = chunk_text(path.read_text(encoding="utf-8"))
             vectors = embed(pieces)
             for piece, vector in zip(pieces, vectors):
                 conn.execute(
                     "INSERT INTO chunks (source, content, embedding) VALUES (%s, %s, %s)",
-                    (source, piece, vector),
+                    (path.name, piece, vector),
                 )
-            print(f"{source}: {len(pieces)} chunks")
+            total += len(pieces)
+            print(f"{path.name}: {len(pieces)} chunks")
 
         conn.commit()
         count = conn.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
         print(f"total chunks in database: {count}")
+        if count != total:
+            print(f"WARNING: inserted {total} but table holds {count}")
 
 
 if __name__ == "__main__":
