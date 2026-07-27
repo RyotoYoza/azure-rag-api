@@ -1,6 +1,0 @@
-env                = "prod"
-suffix             = "ryoto0726"
-my_ip              = "203.0.113.45"
-acr_name           = "acrragapishared0726"
-openai_api_version = "2024-12-01-preview"
-image_tag          = "v2"

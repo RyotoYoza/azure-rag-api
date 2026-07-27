@@ -3,7 +3,7 @@ output "resource_group" {
 }
 
 output "acr_login_server" {
-  value = data.azurerm_container_registry.shared.login_server
+  value = azurerm_container_registry.main.login_server
 }
 
 output "postgres_fqdn" {
