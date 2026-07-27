@@ -123,3 +123,11 @@ jobs:
             sleep 10
           done
           echo "health check failed"; exit 1
+
+      - name: Eval gate
+        working-directory: infra
+        run: |
+          pip install httpx
+          EVAL_BASE_URL=$(terraform output -raw app_url) \
+          EVAL_THRESHOLD=0.85 \
+          python ../evals/run_evals.py
