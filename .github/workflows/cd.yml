@@ -86,7 +86,7 @@ jobs:
           echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
           az postgres flexible-server firewall-rule create \
             --resource-group $(terraform output -raw resource_group) \
-            --name $(terraform output -raw postgres_server_name) \
+            --server-name $(terraform output -raw postgres_server_name) \
             --rule-name gh-runner \
             --start-ip-address $RUNNER_IP --end-ip-address $RUNNER_IP
 
@@ -105,7 +105,7 @@ jobs:
         run: |
           az postgres flexible-server firewall-rule delete \
             --resource-group $(terraform output -raw resource_group) \
-            --name $(terraform output -raw postgres_server_name) \
+            --server-name $(terraform output -raw postgres_server_name) \
             --rule-name gh-runner --yes || true
 
       - name: Smoke test
