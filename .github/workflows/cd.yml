@@ -125,10 +125,4 @@ jobs:
           echo "health check failed"; exit 1
 
 
-  deploy-prod:
-    needs: deploy-dev
-    uses: ./.github/workflows/deploy.yml
-    with:
-      environment: prod
-      image_tag: ${{ github.sha }}
-    secrets: inherit  
+
