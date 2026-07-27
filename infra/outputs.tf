@@ -33,3 +33,15 @@ output "app_url" {
 output "postgres_server_name" {
   value = azurerm_postgresql_flexible_server.main.name
 }
+
+output "openai_api_version" {
+  value = var.openai_api_version
+}
+
+output "chat_deployment" {
+  value = var.chat_deployment
+}
+
+output "embed_deployment" {
+  value = var.embed_deployment
+}
