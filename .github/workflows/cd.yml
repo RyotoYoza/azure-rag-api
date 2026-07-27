@@ -94,10 +94,15 @@ jobs:
         working-directory: infra
         run: |
           KV=$(terraform output -raw key_vault_name)
-          DB=$(az keyvault secret show --vault-name $KV --name database-url --query value -o tsv)
+          export DATABASE_URL=$(az keyvault secret show --vault-name $KV --name database-url --query value -o tsv)
+          export AZURE_OPENAI_ENDPOINT=$(terraform output -raw openai_endpoint)
+          export AZURE_OPENAI_API_VERSION=$(terraform output -raw openai_api_version)
+          export AZURE_OPENAI_CHAT_DEPLOYMENT=$(terraform output -raw chat_deployment)
+          export AZURE_OPENAI_EMBED_DEPLOYMENT=$(terraform output -raw embed_deployment)
+          export USE_MANAGED_IDENTITY=true
           cd ..
           pip install -r requirements.txt
-          DATABASE_URL="$DB" python -m app.ingest
+          python -m app.ingest
 
       - name: Close database firewall
         if: always()
