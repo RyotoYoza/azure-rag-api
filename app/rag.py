@@ -5,11 +5,24 @@ from pgvector.psycopg import register_vector
 
 from app import config
 
-client = AzureOpenAI(
-    azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
-    api_key=config.AZURE_OPENAI_API_KEY,
-    api_version=config.AZURE_OPENAI_API_VERSION,
-)
+if config.USE_MANAGED_IDENTITY:
+    from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+
+    token_provider = get_bearer_token_provider(
+        DefaultAzureCredential(),
+        "https://cognitiveservices.azure.com/.default",
+    )
+    client = AzureOpenAI(
+        azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+        azure_ad_token_provider=token_provider,
+        api_version=config.AZURE_OPENAI_API_VERSION,
+    )
+else:
+    client = AzureOpenAI(
+        azure_endpoint=config.AZURE_OPENAI_ENDPOINT,
+        api_key=config.AZURE_OPENAI_API_KEY,
+        api_version=config.AZURE_OPENAI_API_VERSION,
+    )
 
 
 def embed(texts: list[str]) -> list[list[float]]:

@@ -112,3 +112,46 @@ resource "azurerm_key_vault_secret" "db_password" {
   key_vault_id = azurerm_key_vault.main.id
   depends_on   = [azurerm_role_assignment.kv_admin]
 }
+
+data "azurerm_cognitive_account" "openai" {
+  name                = var.openai_name
+  resource_group_name = var.shared_rg
+}
+
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "id-${local.name}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  tags                = local.tags
+}
+
+resource "azurerm_role_assignment" "app_openai" {
+  scope                = data.azurerm_cognitive_account.openai.id
+  role_definition_name = "Cognitive Services OpenAI User"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "app_kv" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "app_acr" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_key_vault_secret" "db_url" {
+  name = "database-url"
+  value = format(
+    "postgresql://%s:%s@%s:5432/%s?sslmode=require",
+    azurerm_postgresql_flexible_server.main.administrator_login,
+    random_password.postgres.result,
+    azurerm_postgresql_flexible_server.main.fqdn,
+    azurerm_postgresql_flexible_server_database.main.name,
+  )
+  key_vault_id = azurerm_key_vault.main.id
+  depends_on   = [azurerm_role_assignment.kv_admin]
+}

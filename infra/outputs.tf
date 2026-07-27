@@ -13,3 +13,15 @@ output "postgres_fqdn" {
 output "key_vault_name" {
   value = azurerm_key_vault.main.name
 }
+
+output "identity_client_id" {
+  value = azurerm_user_assigned_identity.app.client_id
+}
+
+output "identity_id" {
+  value = azurerm_user_assigned_identity.app.id
+}
+
+output "openai_endpoint" {
+  value = data.azurerm_cognitive_account.openai.endpoint
+}
