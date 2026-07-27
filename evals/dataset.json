@@ -1,0 +1,117 @@
+{
+  "cases": [
+    {
+      "id": "vpn-cert-expiry",
+      "question": "Why does the VPN keep dropping and what certificate should I check?",
+      "expected_source": "vpn_connectionDrops.md",
+      "must_contain": ["JP-Cert-2026"],
+      "type": "grounded"
+    },
+    {
+      "id": "vpn-min-version",
+      "question": "What is the minimum supported Aegis VPN client version?",
+      "expected_source": "vpn_connectionDrops.md",
+      "must_contain": ["5.2"],
+      "type": "grounded"
+    },
+    {
+      "id": "vpn-8hour",
+      "question": "The VPN disconnects every 8 hours. Is that a fault?",
+      "expected_source": "vpn_connectionDrops.md",
+      "must_contain": ["session"],
+      "type": "grounded"
+    },
+    {
+      "id": "kitting-autopilot-stall",
+      "question": "Autopilot enrolment stalls at 82 percent. What causes this?",
+      "expected_source": "laptop_kittingChecklist.md",
+      "must_contain": ["wired"],
+      "type": "grounded"
+    },
+    {
+      "id": "kitting-building-code",
+      "question": "What is the building code for Kumagaya in the asset system?",
+      "expected_source": "laptop_kittingChecklist.md",
+      "must_contain": ["JP-KMG"],
+      "type": "grounded"
+    },
+    {
+      "id": "mfa-reset-verification",
+      "question": "How must an MFA reset request be verified?",
+      "expected_source": "mfa_enrollmentAndResets.md",
+      "must_contain": ["badge"],
+      "type": "grounded"
+    },
+    {
+      "id": "mfa-lockout-threshold",
+      "question": "After how many failed sign-in attempts does an account lock?",
+      "expected_source": "mfa_enrollmentAndResets.md",
+      "must_contain": ["10"],
+      "type": "grounded"
+    },
+    {
+      "id": "mfa-error-code",
+      "question": "What does error code IAM-7715 mean?",
+      "expected_source": "mfa_enrollmentAndResets.md",
+      "must_contain": ["conditional access"],
+      "type": "grounded"
+    },
+    {
+      "id": "sync-retention",
+      "question": "How long do deleted files stay in the recycle bin before a ticket is needed?",
+      "expected_source": "fileSync_issuesAndRecovery.md",
+      "must_contain": ["93"],
+      "type": "grounded"
+    },
+    {
+      "id": "sync-path-limit",
+      "question": "Files are not syncing silently. What path length causes this?",
+      "expected_source": "fileSync_issuesAndRecovery.md",
+      "must_contain": ["400"],
+      "type": "grounded"
+    },
+    {
+      "id": "meetings-echo",
+      "question": "What causes echo in a meeting room?",
+      "expected_source": "meetings_audioVideoIssues.md",
+      "must_contain": ["room"],
+      "type": "grounded"
+    },
+    {
+      "id": "meetings-room-console",
+      "question": "A room console shows Signing in for over ten minutes. What should I do?",
+      "expected_source": "meetings_audioVideoIssues.md",
+      "must_contain": ["restart"],
+      "type": "grounded"
+    },
+    {
+      "id": "offboarding-disable-window",
+      "question": "How long after being disabled is a leaver account deleted?",
+      "expected_source": "offboarding_assetReturn.md",
+      "must_contain": ["90"],
+      "type": "grounded"
+    },
+    {
+      "id": "offboarding-forwarding",
+      "question": "For how long can a leaver's mail be forwarded to another mailbox?",
+      "expected_source": "offboarding_assetReturn.md",
+      "must_contain": ["30"],
+      "type": "grounded"
+    },
+    {
+      "id": "refusal-capital",
+      "question": "What is the capital of France?",
+      "type": "refusal"
+    },
+    {
+      "id": "refusal-salary",
+      "question": "What is the average salary of an IT engineer in Tokyo?",
+      "type": "refusal"
+    },
+    {
+      "id": "refusal-python",
+      "question": "Write me a Python function that reverses a string.",
+      "type": "refusal"
+    }
+  ]
+}
