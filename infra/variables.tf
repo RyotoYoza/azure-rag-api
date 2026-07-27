@@ -34,3 +34,21 @@ variable "openai_name" {
   description = "Name of the existing Azure OpenAI resource"
 }
 
+variable "image_tag" {
+  type    = string
+  default = "v1"
+}
+
+variable "openai_api_version" {
+  type = string
+}
+
+variable "chat_deployment" {
+  type    = string
+  default = "gpt-5-mini"
+}
+
+variable "embed_deployment" {
+  type    = string
+  default = "text-embedding-3-small"
+}

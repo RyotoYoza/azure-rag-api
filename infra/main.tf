@@ -155,3 +155,87 @@ resource "azurerm_key_vault_secret" "db_url" {
   key_vault_id = azurerm_key_vault.main.id
   depends_on   = [azurerm_role_assignment.kv_admin]
 }
+
+resource "azurerm_container_app" "main" {
+  name                         = "ca-${local.name}"
+  resource_group_name          = azurerm_resource_group.main.name
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  revision_mode                = "Single"
+  tags                         = local.tags
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.app.id]
+  }
+
+  registry {
+    server   = azurerm_container_registry.main.login_server
+    identity = azurerm_user_assigned_identity.app.id
+  }
+
+  secret {
+    name                = "database-url"
+    key_vault_secret_id = azurerm_key_vault_secret.db_url.versionless_id
+    identity            = azurerm_user_assigned_identity.app.id
+  }
+
+  ingress {
+    external_enabled = true
+    target_port      = 8000
+    transport        = "http"
+
+    traffic_weight {
+      latest_revision = true
+      percentage      = 100
+    }
+  }
+
+  template {
+    min_replicas = 0
+    max_replicas = 2
+
+    container {
+      name   = "api"
+      image  = "${azurerm_container_registry.main.login_server}/rag-api:${var.image_tag}"
+      cpu    = 0.5
+      memory = "1Gi"
+
+      env {
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
+      }
+      env {
+        name  = "AZURE_OPENAI_ENDPOINT"
+        value = data.azurerm_cognitive_account.openai.endpoint
+      }
+      env {
+        name  = "AZURE_OPENAI_API_VERSION"
+        value = var.openai_api_version
+      }
+      env {
+        name  = "AZURE_OPENAI_CHAT_DEPLOYMENT"
+        value = var.chat_deployment
+      }
+      env {
+        name  = "AZURE_OPENAI_EMBED_DEPLOYMENT"
+        value = var.embed_deployment
+      }
+      env {
+        name  = "USE_MANAGED_IDENTITY"
+        value = "true"
+      }
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = azurerm_user_assigned_identity.app.client_id
+      }
+
+      liveness_probe {
+        transport = "HTTP"
+        port      = 8000
+        path      = "/health"
+      }
+    }
+  }
+
+  depends_on = [azurerm_role_assignment.app_acr]
+}
