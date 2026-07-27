@@ -52,3 +52,15 @@ variable "embed_deployment" {
   type    = string
   default = "text-embedding-3-small"
 }
+
+variable "price_input_per_1m" {
+  type        = string
+  description = "USD cost per 1M input tokens"
+  default     = "0.25"
+}
+
+variable "price_output_per_1m" {
+  type        = string
+  description = "USD cost per 1M output tokens"
+  default     = "2.00"
+}
