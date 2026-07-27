@@ -135,7 +135,7 @@ resource "azurerm_role_assignment" "app_kv" {
 }
 
 resource "azurerm_role_assignment" "app_acr" {
-  scope                = azurerm_container_registry.shared.id
+  scope                = data.azurerm_container_registry.shared.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.app.principal_id
 }
@@ -166,7 +166,7 @@ resource "azurerm_container_app" "main" {
   }
 
   registry {
-    server   = azurerm_container_registry.shared.login_server
+    server   = data.azurerm_container_registry.shared.login_server
     identity = azurerm_user_assigned_identity.app.id
   }
 
@@ -193,7 +193,7 @@ resource "azurerm_container_app" "main" {
 
     container {
       name   = "api"
-      image  = "${azurerm_container_registry.shared.login_server}/rag-api:${var.image_tag}"
+      image  = "${data.azurerm_container_registry.shared.login_server}/rag-api:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 
