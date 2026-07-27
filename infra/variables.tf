@@ -52,3 +52,7 @@ variable "embed_deployment" {
   type    = string
   default = "text-embedding-3-small"
 }
+
+variable "acr_name" {
+  type = string
+}

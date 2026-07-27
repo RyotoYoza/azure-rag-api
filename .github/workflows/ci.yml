@@ -77,7 +77,7 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Init
-        run: terraform init
+        run: terraform init -reconfigure -backend-config="key=ragapi-dev.tfstate"
 
       - name: Validate
         run: terraform validate
