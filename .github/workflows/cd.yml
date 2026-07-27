@@ -123,6 +123,3 @@ jobs:
             sleep 10
           done
           echo "health check failed"; exit 1
-
-
-

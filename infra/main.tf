@@ -16,9 +16,12 @@ resource "azurerm_resource_group" "main" {
   tags     = local.tags
 }
 
-data "azurerm_container_registry" "shared" {
-  name                = var.acr_name
-  resource_group_name = var.shared_rg
+resource "azurerm_container_registry" "main" {
+  name                = "acr${var.project}${var.suffix}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Basic"
+  tags                = local.tags
 }
 
 resource "azurerm_log_analytics_workspace" "main" {
@@ -86,7 +89,7 @@ resource "azurerm_postgresql_flexible_server_firewall_rule" "my_ip" {
 }
 
 resource "azurerm_key_vault" "main" {
-  name                       = "kv-${var.env}-${var.suffix}"
+  name                       = "kv-${var.project}-${var.suffix}"
   resource_group_name        = azurerm_resource_group.main.name
   location                   = azurerm_resource_group.main.location
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -135,7 +138,7 @@ resource "azurerm_role_assignment" "app_kv" {
 }
 
 resource "azurerm_role_assignment" "app_acr" {
-  scope                = data.azurerm_container_registry.shared.id
+  scope                = azurerm_container_registry.main.id
   role_definition_name = "AcrPull"
   principal_id         = azurerm_user_assigned_identity.app.principal_id
 }
@@ -166,7 +169,7 @@ resource "azurerm_container_app" "main" {
   }
 
   registry {
-    server   = data.azurerm_container_registry.shared.login_server
+    server   = azurerm_container_registry.main.login_server
     identity = azurerm_user_assigned_identity.app.id
   }
 
@@ -193,7 +196,7 @@ resource "azurerm_container_app" "main" {
 
     container {
       name   = "api"
-      image  = "${data.azurerm_container_registry.shared.login_server}/rag-api:${var.image_tag}"
+      image  = "${azurerm_container_registry.main.login_server}/rag-api:${var.image_tag}"
       cpu    = 0.5
       memory = "1Gi"
 
