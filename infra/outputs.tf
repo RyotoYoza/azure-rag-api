@@ -45,3 +45,7 @@ output "chat_deployment" {
 output "embed_deployment" {
   value = var.embed_deployment
 }
+
+output "app_insights_name" {
+  value = azurerm_application_insights.main.name
+}

@@ -228,6 +228,18 @@ resource "azurerm_container_app" "main" {
         name  = "AZURE_CLIENT_ID"
         value = azurerm_user_assigned_identity.app.client_id
       }
+      env {
+        name  = "APPLICATIONINSIGHTS_CONNECTION_STRING"
+        value = azurerm_application_insights.main.connection_string
+      }
+      env {
+        name  = "PRICE_INPUT_PER_1M"
+        value = var.price_input_per_1m
+      }
+      env {
+        name  = "PRICE_OUTPUT_PER_1M"
+        value = var.price_output_per_1m
+      }
 
       liveness_probe {
         transport = "HTTP"
@@ -238,4 +250,14 @@ resource "azurerm_container_app" "main" {
   }
 
   depends_on = [azurerm_role_assignment.app_acr]
+}
+
+
+resource "azurerm_application_insights" "main" {
+  name                = "appi-${local.name}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  workspace_id        = azurerm_log_analytics_workspace.main.id
+  application_type    = "web"
+  tags                = local.tags
 }
