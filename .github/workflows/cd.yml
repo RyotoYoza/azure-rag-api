@@ -87,7 +87,7 @@ jobs:
           az postgres flexible-server firewall-rule create \
             --resource-group $(terraform output -raw resource_group) \
             --server-name $(terraform output -raw postgres_server_name) \
-            --rule-name gh-runner \
+            --name gh-runner \
             --start-ip-address $RUNNER_IP --end-ip-address $RUNNER_IP
 
       - name: Ingest knowledge base
@@ -106,7 +106,7 @@ jobs:
           az postgres flexible-server firewall-rule delete \
             --resource-group $(terraform output -raw resource_group) \
             --server-name $(terraform output -raw postgres_server_name) \
-            --rule-name gh-runner --yes || true
+            --name gh-runner --yes || true
 
       - name: Smoke test
         working-directory: infra
