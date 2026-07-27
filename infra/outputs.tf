@@ -29,3 +29,7 @@ output "openai_endpoint" {
 output "app_url" {
   value = "https://${azurerm_container_app.main.ingress[0].fqdn}"
 }
+
+output "postgres_server_name" {
+  value = azurerm_postgresql_flexible_server.main.name
+}

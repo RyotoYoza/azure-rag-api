@@ -1,0 +1,121 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: cd-main
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: ruff check .
+      - run: pytest -v
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra
+        run: terraform init
+
+      - name: Phase 1 — registry only
+        working-directory: infra
+        run: |
+          terraform apply -auto-approve -var-file=dev.tfvars \
+            -target=azurerm_resource_group.main \
+            -target=azurerm_container_registry.main
+
+      - name: Get ACR name
+        id: acr
+        working-directory: infra
+        run: |
+          SERVER=$(terraform output -raw acr_login_server)
+          echo "server=$SERVER" >> $GITHUB_OUTPUT
+          echo "name=${SERVER%%.*}" >> $GITHUB_OUTPUT
+
+      - name: Build and push image
+        run: |
+          az acr login --name ${{ steps.acr.outputs.name }}
+          docker buildx build --platform linux/amd64 --provenance=false \
+            -t ${{ steps.acr.outputs.server }}/rag-api:${{ github.sha }} \
+            --push .
+
+      - name: Phase 2 — apply everything
+        working-directory: infra
+        run: terraform apply -auto-approve -var-file=dev.tfvars
+
+      - name: Open database firewall for this runner
+        id: fw
+        working-directory: infra
+        run: |
+          RUNNER_IP=$(curl -s ifconfig.me)
+          echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+          az postgres flexible-server firewall-rule create \
+            --resource-group $(terraform output -raw resource_group) \
+            --name $(terraform output -raw postgres_server_name) \
+            --rule-name gh-runner \
+            --start-ip-address $RUNNER_IP --end-ip-address $RUNNER_IP
+
+      - name: Ingest knowledge base
+        working-directory: infra
+        run: |
+          KV=$(terraform output -raw key_vault_name)
+          DB=$(az keyvault secret show --vault-name $KV --name database-url --query value -o tsv)
+          cd ..
+          pip install -r requirements.txt
+          DATABASE_URL="$DB" python -m app.ingest
+
+      - name: Close database firewall
+        if: always()
+        working-directory: infra
+        run: |
+          az postgres flexible-server firewall-rule delete \
+            --resource-group $(terraform output -raw resource_group) \
+            --name $(terraform output -raw postgres_server_name) \
+            --rule-name gh-runner --yes || true
+
+      - name: Smoke test
+        working-directory: infra
+        run: |
+          URL=$(terraform output -raw app_url)
+          echo "Deployed to $URL"
+          for i in $(seq 1 10); do
+            if curl -sf "$URL/health"; then echo "healthy"; exit 0; fi
+            sleep 10
+          done
+          echo "health check failed"; exit 1
