@@ -25,3 +25,7 @@ output "identity_id" {
 output "openai_endpoint" {
   value = data.azurerm_cognitive_account.openai.endpoint
 }
+
+output "app_url" {
+  value = "https://${azurerm_container_app.main.ingress[0].fqdn}"
+}
